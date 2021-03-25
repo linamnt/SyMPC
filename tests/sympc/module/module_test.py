@@ -70,7 +70,7 @@ def test_run_linear_model(get_clients: Callable[[int], List[Any]]):
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
-    assert torch.allclose(res, expected, atol=1e-3)
+    assert res == pytest.approx(expected.detach().numpy(), abs=1e-3)
 
 
 def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
@@ -95,7 +95,7 @@ def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
-    assert torch.allclose(res, expected, atol=1e-3)
+    assert res == pytest.approx(expected.detach().numpy(), abs=1e-3)
 
 
 @pytest.mark.parametrize("is_remote", [False, True])

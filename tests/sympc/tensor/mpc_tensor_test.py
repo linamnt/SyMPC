@@ -4,6 +4,7 @@ import operator
 # third party
 import numpy as np
 import pytest
+from pytest import approx
 import torch
 
 from sympc.session import Session
@@ -40,7 +41,7 @@ def test_reconstruct(get_clients) -> None:
     x = MPCTensor(secret=x_secret, session=session)
     x = x.reconstruct()
 
-    assert np.allclose(x_secret, x)
+    assert x_secret == pytest.approx(x, rel=1e-5, abs=1e-8)
 
 
 def test_op_mpc_different_sessions(get_clients) -> None:
@@ -77,7 +78,7 @@ def test_remote_mpc_with_shape(get_clients) -> None:
     x = MPCTensor(secret=x_remote, shape=(1, 3), session=session)
     result = x.reconstruct()
 
-    assert np.allclose(x_remote.get(), result, atol=1e-5)
+    assert result == pytest.approx(x_remote.get(), rel=1e-5, abs=1e-5) 
 
 
 def test_remote_not_tensor(get_clients) -> None:
@@ -95,7 +96,7 @@ def test_remote_not_tensor(get_clients) -> None:
     x = MPCTensor(secret=x_remote_int, shape=(1,), session=session)
     result = x.reconstruct()
 
-    assert np.allclose(x_remote_int.get(), result, atol=1e-5)
+    assert x_remote_int.get() == pytest.approx(result, rel=1e-5, abs=1e-5)
 
 
 def test_local_secret_not_tensor(get_clients) -> None:
@@ -113,7 +114,7 @@ def test_local_secret_not_tensor(get_clients) -> None:
     x = MPCTensor(secret=x_float, session=session)
     result = x.reconstruct()
 
-    assert np.allclose(torch.tensor(x_float), result)
+    assert torch.tensor(x_float) == pytest.approx(result, rel=1e-5)
 
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
@@ -132,7 +133,7 @@ def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
     result = op(x, y).reconstruct()
     expected_result = op(x_secret, y_secret)
 
-    assert np.allclose(result, expected_result, rtol=10e-4)
+    assert result == pytest.approx(expected_result, rel=10e-4, abs=1e-8)
 
 
 @pytest.mark.parametrize("nr_clients", [2])
@@ -154,7 +155,7 @@ def test_conv2d_mpc_mpc(get_clients, nr_clients, bias, stride, padding) -> None:
     result = input.conv2d(weight, **kwargs).reconstruct()
     expected_result = torch.nn.functional.conv2d(input_secret, weight_secret, **kwargs)
 
-    assert np.allclose(result, expected_result, rtol=10e-4)
+    assert result == pytest.approx(expected_result, rel=10e-4, abs=1e-8)
 
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
@@ -175,7 +176,7 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
     op = getattr(operator, op_str)
     expected_result = op(x_secret, y_secret)
     result = op(x, y_secret).reconstruct()
-    assert np.allclose(result, expected_result, atol=10e-4)
+    assert result == pytest.approx(expected_result, rel=1e-5, abs=10e-4)
 
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
@@ -194,7 +195,7 @@ def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
     expected_result = op(y_secret, x_secret)
     result = op(y_secret, x).reconstruct()
 
-    assert np.allclose(result, expected_result, atol=10e-4)
+    assert result == pytest.approx(expected_result, rel=1e-5, abs=10e-4)
 
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
@@ -214,7 +215,7 @@ def test_ops_integer(get_clients, nr_clients, op_str) -> None:
     expected_result = op(x_secret, y)
     result = op(x, y).reconstruct()
 
-    assert np.allclose(result, expected_result, atol=10e-3)
+    assert result == pytest.approx(expected_result, rel=1e-5, abs=10e-3)
 
 
 def test_mpc_print(get_clients) -> None:
